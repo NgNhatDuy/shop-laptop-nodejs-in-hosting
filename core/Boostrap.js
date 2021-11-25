@@ -1,5 +1,3 @@
-require("../config/config");
-
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -7,6 +5,9 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const fs = require('fs');
 const hbs = require('hbs');
+
+const config = require("../config/config");
+const sequelize = require('./../config/database');
 
 const app = express();
 
@@ -39,17 +40,19 @@ function viewEngine(app) {
  * 
  * Set up default and custom middlewares.
  **/
-const template = require("../middlewares/TemplateMiddleware");
+const defaultTemplate = require("../middlewares/DefaultTemplateMiddleware");
+const adminTemplate = require("../middlewares/AdminTemplateMiddleware");
 
-function middleware(app) {
+function registerMiddleware(app) {
 	app.use(logger('dev'));
 	app.use(express.json());
-	app.use(express.urlencoded({ extended: false }));
+	app.use(express.urlencoded({ extended: true }));
 	app.use(cookieParser());
 	app.use(express.static(path.join(__dirname, '../public')));
 
 	/* Custom */
-	app.use("/*", template);
+	app.use("/*", defaultTemplate);
+	app.use("/*/admin", adminTemplate);
 }
 
 
@@ -63,13 +66,21 @@ const usersRouter = require('../routes/users');
 const productsRouter = require('../routes/products');
 const orderRouter = require('../routes/order');
 
-function routing(app) {
+function registerRoute(app) {
 	/* Custom routing */
 	app.use('/', homeRouter);
 	app.use('/users', usersRouter);
 	app.use('/products', productsRouter);
-	app.use('/orders',orderRouter);
+	app.use('/orders',orderRouter);	
+}
 
+
+/**
+ * Error handler
+ * 
+ * Handling for invalid route.
+ **/
+function registerHandler(app) {
 	/* Catch 404 and forward to error handler */
 	app.use(function(req, res, next) {
 		next(createError(404));
@@ -88,6 +99,7 @@ function routing(app) {
 
 module.exports = {
 	viewEngine,
-	middleware,
-	routing
+	registerMiddleware,
+	registerRoute,
+	registerHandler
 }

@@ -1,21 +1,40 @@
 const path = require('path');
 
+const ProductModel = require('./../models/ProductModel');
+
 class DefaultController {
 
 	index(req, res) {
+		const productPerPage = 2;
+		const page = +req.params.page || 1;
 
-		res.render('productList', {
-			title: "Product",
-			content: "Default: index"
+		const offset = (page - 1) * productPerPage;
+		const condition = {
+			offset: offset,
+			limit: productPerPage
+		};
+
+		ProductModel.findAll(condition).then((products) => {
+			res.render('productList', {
+				title: "Product",
+				data: products
+			});
 		});
 	}
 
 	detail(req, res) {
+		const productId = req.params.productId;
+		const condition = {
+			where: { id: productId }
+		};
 
-		res.render('productDetail', {
-			title: "Product",
-			content: "Default: index"
-		});
+		ProductModel.findOne(condition).then((product) => {
+			res.render('productDetail', {
+				title: "Product",
+				data: product
+			});
+		})
+		
 	}
 }
 
